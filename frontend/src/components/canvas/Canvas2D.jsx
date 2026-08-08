@@ -7,7 +7,7 @@ import ReactFlow, {
   Controls,
   Background,
   MiniMap,
-} from 'react-flow-renderer'
+} from '@xyflow/react'
 import { useFlowStore } from '@store/flowStore'
 import StartNode from '@components/nodes/StartNode'
 import EndNode from '@components/nodes/EndNode'

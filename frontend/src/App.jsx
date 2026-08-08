@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { MainLayout } from '@components/layout/MainLayout'
 import { Canvas2D } from '@components/canvas/Canvas2D'
-import { FlowWizard } from '@components/forms/FlowWizard'
-import { Sidebar } from '@components/navigation/Sidebar'
+//import { FlowWizard } from '@components/forms/FlowWizard'
+//import { Sidebar } from '@components/navigation/Sidebar'
 import { useFlowStore } from '@store/flowStore'
 
 function App() {
@@ -12,12 +12,11 @@ function App() {
     <MainLayout>
       <div className="flex h-screen">
         {/* Sidebar */}
-        <Sidebar />
-        
+    
         {/* Área Principal */}
         <main className="flex-1 flex flex-col">
           {/* Wizard para crear flujos */}
-          <FlowWizard />
+   
           
           {/* Canvas */}
           <div className="flex-1">

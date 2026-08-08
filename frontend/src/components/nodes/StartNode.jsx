@@ -1,4 +1,4 @@
-import { Handle, Position } from 'react-flow-renderer'
+import { Handle, Position } from "@xyflow/react";
 
 export default function StartNode({ data }) {
   return (
