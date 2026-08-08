@@ -1,32 +1,36 @@
 {
-  "name": "dinamic-local-flows",
+  "name": "frontend",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "build": "vite build",
+    "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.3.3",
+    "@xyflow/react": "^12.11.2",
+    "axios": "^1.19.0",
+    "date-fns": "^4.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-force-graph": "^1.48.2",
-    "reactflow": "^11.11.4"
+    "three": "^0.185.1",
+    "uuid": "^14.0.1",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
     "autoprefixer": "^10.5.4",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
     "oxlint": "^1.75.0",
     "postcss": "^8.5.26",
-    "tailwindcss": "^4.3.3",
-    "typescript": "~6.0.2",
+    "tailwindcss": "^3.4.19",
     "vite": "^8.2.0"
-  },
-  "description": "Interactive modular flow diagram designer with 2D/3D visualization"
+  }
 }
