@@ -1,5 +1,5 @@
 import { useRef, useEffect, useMemo, useState } from 'react'
-import { ForceGraph3D } from 'react-force-graph'
+import ForceGraph3D from 'react-force-graph-3d'
 import { useFlowStore } from '@store/flowStore'
 
 export function Canvas3D() {
