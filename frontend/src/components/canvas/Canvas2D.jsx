@@ -1,13 +1,16 @@
-import { useCallback } from 'react'
-import ReactFlow, {
+import { useCallback, useEffect } from 'react'
+import {
+  ReactFlow,
   addEdge,
-  Connection,
   useNodesState,
   useEdgesState,
   Controls,
   Background,
   MiniMap,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
 import { useFlowStore } from '@store/flowStore'
 import StartNode from '@components/nodes/StartNode'
 import EndNode from '@components/nodes/EndNode'
@@ -23,38 +26,68 @@ const nodeTypes = {
 
 export function Canvas2D() {
   const { nodes: storeNodes, edges: storeEdges, setNodes, setEdges } = useFlowStore()
-  const [nodes, setNodesState] = useNodesState(storeNodes)
-  const [edges, setEdgesState] = useEdgesState(storeEdges)
+  const [nodes, setNodesState, onNodesChange] = useNodesState(storeNodes)
+  const [edges, setEdgesState, onEdgesChange] = useEdgesState(storeEdges)
+
+  useEffect(() => {
+    setNodesState(storeNodes)
+  }, [storeNodes, setNodesState])
+
+  useEffect(() => {
+    setEdgesState(storeEdges)
+  }, [storeEdges, setEdgesState])
+
+  const handleNodesChange = useCallback(
+    (changes) => {
+      onNodesChange(changes)
+      setNodesState((current) => {
+        const updated = applyNodeChanges(changes, current)
+        setNodes(updated)
+        return updated
+      })
+    },
+    [onNodesChange, setNodesState, setNodes],
+  )
+
+  const handleEdgesChange = useCallback(
+    (changes) => {
+      onEdgesChange(changes)
+      setEdgesState((current) => {
+        const updated = applyEdgeChanges(changes, current)
+        setEdges(updated)
+        return updated
+      })
+    },
+    [onEdgesChange, setEdgesState, setEdges],
+  )
 
   const onConnect = useCallback(
     (connection) => {
-      const newEdges = addEdge(connection, edges)
-      setEdgesState(newEdges)
-      setEdges(newEdges)
+      setEdgesState((current) => {
+        const updated = addEdge(connection, current)
+        setEdges(updated)
+        return updated
+      })
     },
-    [edges, setEdgesState, setEdges]
-  )
-
-  const onNodesChange = useCallback(
-    (changes) => {
-      setNodesState(changes)
-      // Sincronizar con store
-    },
-    [setNodesState]
+    [setEdgesState, setEdges],
   )
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onConnect={onConnect}
-      onNodesChange={onNodesChange}
-      nodeTypes={nodeTypes}
-      fitView
-    >
-      <Background />
-      <Controls />
-      <MiniMap />
-    </ReactFlow>
+    <div className="w-full h-full">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onConnect={onConnect}
+        onNodesChange={handleNodesChange}
+        onEdgesChange={handleEdgesChange}
+        nodeTypes={nodeTypes}
+        fitView
+        className="bg-slate-900/50"
+      >
+        <Background color="#334155" gap={16} />
+        <Controls className="!bg-white/10 !border-white/20" />
+        <MiniMap className="!bg-slate-800/80" />
+      </ReactFlow>
+    </div>
   )
 }
