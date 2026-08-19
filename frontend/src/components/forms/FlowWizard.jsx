@@ -1,184 +1,230 @@
-import { useState } from 'react'
-import { v4 as uuidv4 } from 'uuid'
-import { useFlowStore } from '@store/flowStore'
-import { flowService } from '@services/api'
-import { Button } from '@components/common/Button'
+/**
+ * Componente para crear/editar flujos (Wizard)
+ */
+import React, { useState } from 'react';
 
-const STEPS = ['Basic Data', 'Nodes', 'Connections']
+const FlowWizard = ({ isOpen, onClose, onSave, workspaces }) => {
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    workspace: 'Default',
+    nodes: [],
+    edges: [],
+  });
 
-export function FlowWizard() {
-  const [step, setStep] = useState(0)
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
-  const {
-    flowMetadata,
-    setFlowMetadata,
-    nodes,
-    edges,
-    addNode,
-    currentFlowId,
-    setCurrentFlowId,
-    loadFlow,
-  } = useFlowStore()
+  if (!isOpen) return null;
 
-  const [newNodeType, setNewNodeType] = useState('process')
-  const [newNodeLabel, setNewNodeLabel] = useState('')
+  const handleNext = () => {
+    if (step < 3) setStep(step + 1);
+  };
 
-  const handleAddNode = () => {
-    if (!newNodeLabel.trim()) return
-    const id = `node-${uuidv4().slice(0, 8)}`
-    const yOffset = nodes.length * 80 + 50
-    addNode({
-      id,
-      type: newNodeType,
-      position: { x: 250, y: yOffset },
-      data: { label: newNodeLabel },
-    })
-    setNewNodeLabel('')
-  }
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
+  };
 
-  const handleSave = async () => {
-    if (!flowMetadata.name.trim()) {
-      setMessage('Flow name is required')
-      return
-    }
-    try {
-      setSaving(true)
-      setMessage('')
-      const payload = {
-        name: flowMetadata.name,
-        description: flowMetadata.description,
-        workspace: flowMetadata.workspace || null,
-        nodes: nodes.map((n) => ({
-          ...n,
-          label: n.data?.label || n.label || n.type,
-        })),
-        edges,
-      }
-      if (currentFlowId) {
-        const res = await flowService.updateFlow(currentFlowId, payload, flowMetadata.workspace)
-        loadFlow(res.data.data)
-        setMessage('Flow updated successfully')
-      } else {
-        const res = await flowService.createFlow(payload)
-        loadFlow(res.data.data)
-        setCurrentFlowId(res.data.data.id)
-        setMessage('Flow saved successfully')
-      }
-    } catch (err) {
-      setMessage(err.response?.data?.detail || 'Failed to save flow')
-    } finally {
-      setSaving(false)
-    }
-  }
+  const handleSubmit = () => {
+    onSave(formData);
+    onClose();
+  };
 
-  const handleExport = async () => {
-    if (!currentFlowId) {
-      setMessage('Save the flow first before exporting')
-      return
-    }
-    try {
-      const res = await flowService.exportFlow(currentFlowId, flowMetadata.workspace)
-      const ascii = res.data.ascii
-      await navigator.clipboard.writeText(ascii)
-      setMessage('ASCII diagram copied to clipboard')
-    } catch {
-      setMessage('Export failed — is the backend running?')
-    }
-  }
+  const updateFormData = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   return (
-    <div className="bg-white/10 backdrop-blur-lg border-b border-white/20 p-4 text-white">
-      <div className="flex items-center gap-2 mb-4">
-        {STEPS.map((label, i) => (
-          <button
-            key={label}
-            onClick={() => setStep(i)}
-            className={`px-3 py-1 rounded-full text-sm transition-all ${
-              step === i
-                ? 'bg-blue-500 text-white'
-                : 'bg-white/10 text-gray-300 hover:bg-white/20'
-            }`}
-          >
-            {i + 1}. {label}
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content flow-wizard" onClick={e => e.stopPropagation()}>
+        {/* Header del Wizard */}
+        <div className="wizard-header">
+          <h2>Nuevo Flujo de Trabajo</h2>
+          <button className="btn-close" onClick={onClose}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
-        ))}
-      </div>
-
-      {step === 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <input
-            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm placeholder-gray-400"
-            placeholder="Flow name *"
-            value={flowMetadata.name}
-            onChange={(e) => setFlowMetadata({ ...flowMetadata, name: e.target.value })}
-          />
-          <input
-            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm placeholder-gray-400"
-            placeholder="Description"
-            value={flowMetadata.description}
-            onChange={(e) => setFlowMetadata({ ...flowMetadata, description: e.target.value })}
-          />
-          <input
-            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm placeholder-gray-400"
-            placeholder="Workspace (optional)"
-            value={flowMetadata.workspace || ''}
-            onChange={(e) => setFlowMetadata({ ...flowMetadata, workspace: e.target.value || null })}
-          />
         </div>
-      )}
 
-      {step === 1 && (
-        <div className="flex flex-wrap items-end gap-3">
-          <select
-            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm"
-            value={newNodeType}
-            onChange={(e) => setNewNodeType(e.target.value)}
+        {/* Progress Bar */}
+        <div className="wizard-progress">
+          {[1, 2, 3].map(s => (
+            <React.Fragment key={s}>
+              <div className={`progress-step ${step >= s ? 'active' : ''}`}>
+                <span className="step-number">{s}</span>
+                <span className="step-label">
+                  {s === 1 ? 'Datos Básicos' : s === 2 ? 'Nodos' : 'Conexiones'}
+                </span>
+              </div>
+              {s < 3 && <div className={`progress-line ${step > s ? 'active' : ''}`} />}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Contenido del Step */}
+        <div className="wizard-body">
+          {step === 1 && (
+            <div className="wizard-step step-1">
+              <div className="form-group">
+                <label htmlFor="flow-name">Nombre del Flujo *</label>
+                <input
+                  id="flow-name"
+                  type="text"
+                  placeholder="Ej: Proceso de Aprobación"
+                  value={formData.name}
+                  onChange={(e) => updateFormData('name', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="flow-description">Descripción</label>
+                <textarea
+                  id="flow-description"
+                  placeholder="Describe el propósito del flujo..."
+                  rows="3"
+                  value={formData.description}
+                  onChange={(e) => updateFormData('description', e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="flow-workspace">Workspace</label>
+                <select
+                  id="flow-workspace"
+                  value={formData.workspace}
+                  onChange={(e) => updateFormData('workspace', e.target.value)}
+                >
+                  <option value="Default">Default</option>
+                  {workspaces.map(ws => (
+                    <option key={ws.name} value={ws.name}>{ws.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="wizard-step step-2">
+              <div className="node-types-grid">
+                <p className="help-text">Selecciona los tipos de nodos que necesitas:</p>
+                <div className="node-type-cards">
+                  {['start', 'process', 'decision', 'end', 'subflow', 'input', 'output'].map(type => (
+                    <div 
+                      key={type} 
+                      className={`node-type-card ${formData.nodes.some(n => n.type === type) ? 'selected' : ''}`}
+                      onClick={() => {
+                        const newNode = {
+                          id: `node-${Date.now()}`,
+                          type,
+                          label: type.charAt(0).toUpperCase() + type.slice(1),
+                          position: { x: 100, y: 100 },
+                        };
+                        updateFormData('nodes', [...formData.nodes, newNode]);
+                      }}
+                    >
+                      <div className="node-icon">{getNodeSymbol(type)}</div>
+                      <span className="node-label">{type}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {formData.nodes.length > 0 && (
+                <div className="nodes-list-preview">
+                  <h4>Nodos agregados ({formData.nodes.length})</h4>
+                  <ul>
+                    {formData.nodes.map((node, idx) => (
+                      <li key={node.id}>
+                        <span className="node-symbol">{getNodeSymbol(node.type)}</span>
+                        {node.label}
+                        <button 
+                          className="btn-remove-node"
+                          onClick={() => {
+                            updateFormData('nodes', formData.nodes.filter((_, i) => i !== idx));
+                          }}
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="wizard-step step-3">
+              <div className="connections-info">
+                <p className="help-text">
+                  Las conexiones se pueden definir después de crear el flujo arrastrando en el canvas.
+                </p>
+                <div className="summary-card">
+                  <h4>Resumen del Flujo</h4>
+                  <div className="summary-item">
+                    <strong>Nombre:</strong> {formData.name || 'Sin nombre'}
+                  </div>
+                  <div className="summary-item">
+                    <strong>Workspace:</strong> {formData.workspace}
+                  </div>
+                  <div className="summary-item">
+                    <strong>Nodos:</strong> {formData.nodes.length}
+                  </div>
+                  <div className="summary-item">
+                    <strong>Conexiones:</strong> {formData.edges.length}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer con botones de navegación */}
+        <div className="wizard-footer">
+          <button 
+            className="btn btn-secondary" 
+            onClick={handleBack}
+            disabled={step === 1}
           >
-            <option value="start">Start</option>
-            <option value="process">Process</option>
-            <option value="decision">Decision</option>
-            <option value="end">End</option>
-          </select>
-          <input
-            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm placeholder-gray-400"
-            placeholder="Node label"
-            value={newNodeLabel}
-            onChange={(e) => setNewNodeLabel(e.target.value)}
-          />
-          <Button size="sm" onClick={handleAddNode}>
-            Add Node
-          </Button>
-          <span className="text-sm text-gray-400">{nodes.length} nodes on canvas</span>
+            Anterior
+          </button>
+          
+          {step < 3 ? (
+            <button 
+              className="btn btn-primary" 
+              onClick={handleNext}
+              disabled={step === 1 && !formData.name.trim()}
+            >
+              Siguiente
+            </button>
+          ) : (
+            <button 
+              className="btn btn-success" 
+              onClick={handleSubmit}
+              disabled={!formData.name.trim()}
+            >
+              Crear Flujo
+            </button>
+          )}
         </div>
-      )}
-
-      {step === 2 && (
-        <div className="text-sm text-gray-300">
-          <p>Connect nodes by dragging from one handle to another on the 2D canvas.</p>
-          <p className="mt-1">Current connections: <strong>{edges.length}</strong></p>
-        </div>
-      )}
-
-      <div className="flex items-center gap-3 mt-4">
-        {step > 0 && (
-          <Button size="sm" variant="ghost" onClick={() => setStep(step - 1)}>
-            Back
-          </Button>
-        )}
-        {step < STEPS.length - 1 && (
-          <Button size="sm" variant="outline" onClick={() => setStep(step + 1)}>
-            Next
-          </Button>
-        )}
-        <Button size="sm" onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : currentFlowId ? 'Update Flow' : 'Save Flow'}
-        </Button>
-        <Button size="sm" variant="secondary" onClick={handleExport}>
-          Export ASCII
-        </Button>
-        {message && <span className="text-sm text-blue-300">{message}</span>}
       </div>
     </div>
-  )
+  );
+};
+
+// Símbolos para cada tipo de nodo
+function getNodeSymbol(type) {
+  const symbols = {
+    start: '●',
+    end: '■',
+    process: '□',
+    decision: '◇',
+    subflow: '▢',
+    input: '⬚',
+    output: '⬛',
+  };
+  return symbols[type] || '○';
 }
+
+export default FlowWizard;
