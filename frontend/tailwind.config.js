@@ -53,8 +53,5 @@ export default {
       },
     },
   },
-  plugins: [
-    require('tailwindcss-glass'),
-  ],
+  plugins: [],
 }
-

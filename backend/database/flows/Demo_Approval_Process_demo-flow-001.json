@@ -1,0 +1,44 @@
+{
+  "id": "demo-flow-001",
+  "name": "Demo Approval Process",
+  "description": "Sample flow for testing DinamicLocalFlows",
+  "version": "1.0.0",
+  "workspace": null,
+  "createdAt": "2026-08-13T10:00:00",
+  "updatedAt": "2026-08-13T10:00:00",
+  "nodes": [
+    {
+      "id": "node-start",
+      "type": "start",
+      "label": "Start",
+      "position": { "x": 250, "y": 50 },
+      "data": { "trigger": "manual" }
+    },
+    {
+      "id": "node-process",
+      "type": "process",
+      "label": "Validate Data",
+      "position": { "x": 250, "y": 180 },
+      "data": { "description": "Verify input" }
+    },
+    {
+      "id": "node-decision",
+      "type": "decision",
+      "label": "Valid?",
+      "position": { "x": 250, "y": 310 },
+      "data": { "conditions": [{ "label": "Yes" }, { "label": "No" }] }
+    },
+    {
+      "id": "node-end",
+      "type": "end",
+      "label": "End",
+      "position": { "x": 250, "y": 440 },
+      "data": { "status": "completed" }
+    }
+  ],
+  "edges": [
+    { "id": "edge-1", "source": "node-start", "target": "node-process", "type": "default" },
+    { "id": "edge-2", "source": "node-process", "target": "node-decision", "type": "default" },
+    { "id": "edge-3", "source": "node-decision", "target": "node-end", "type": "default", "data": { "condition": "yes" } }
+  ]
+}
